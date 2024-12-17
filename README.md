@@ -17,9 +17,13 @@ const { SoundgasmExtractor } = require("soundgasm-extractor");
 // Or
 import { SoundgasmExtractor } from "soundgasm-extractor";
 
-const player = new Player(client, {
-  //...
-});
+const player = new Player(client, {});
 
-await player.extractors.register(SoundgasmExtractor, { /* There is currently no options */ });
+await player.extractors.register(SoundgasmExtractor, { /* options */ });
 ```
+
+## Options
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `skipProbing` | `boolean` | `false` | Skips probing for the track duration. You can enable this to save some precious milliseconds as probing those kind of streams dont seem to work anyway. |

@@ -49,6 +49,8 @@ function downloadStream(url, opts = {}) {
 }
 
 // src/SoundgasmExtractor.ts
+var import_https2 = __toESM(require("https"), 1);
+var import_http2 = __toESM(require("http"), 1);
 var SoundgasmExtractor = class extends import_discord_player.BaseExtractor {
   async activate() {
     this.protocols = ["soundgasm"];
@@ -75,6 +77,38 @@ var SoundgasmExtractor = class extends import_discord_player.BaseExtractor {
       requestedBy: null,
       raw: { stream: audioUrl }
     };
+    if (!this.options.skipProbing) {
+      const data = await downloadStream(audioUrl, context.requestOptions);
+      try {
+        const mediaplex = require("mediaplex");
+        const timeout = this.context.player.options.probeTimeout ?? 5e3;
+        const { result, stream } = await Promise.race([
+          mediaplex.probeStream(data),
+          new Promise((_, r) => {
+            setTimeout(() => r(new Error("Timeout")), timeout);
+          })
+        ]);
+        if (result) trackInfo.duration = result.duration * 1e3;
+        stream.destroy();
+      } catch {
+      }
+    } else if (this.options.attemptAlternateProbing) {
+      try {
+        const bitrateKbps = 128;
+        const getFileSize = (url) => new Promise((resolve, reject) => {
+          (audioUrl.startsWith("http://") ? import_http2.default : import_https2.default).get(url, (res) => {
+            const fileSize2 = parseInt(res.headers["content-length"] || "0", 10);
+            if (fileSize2) resolve(fileSize2);
+            else reject(new Error("Unable to fetch file size."));
+          }).on("error", reject);
+        });
+        const fileSize = await getFileSize(audioUrl);
+        const bitrateBps = bitrateKbps * 1e3 / 8;
+        const durationInSeconds = fileSize / bitrateBps;
+        trackInfo.duration = durationInSeconds * 1e3;
+      } catch {
+      }
+    }
     const track = new import_discord_player.Track(this.context.player, {
       title: trackInfo.title,
       url: trackInfo.url,
@@ -92,34 +126,11 @@ var SoundgasmExtractor = class extends import_discord_player.BaseExtractor {
         return trackInfo;
       }
     });
-    if (!this.options.skipProbing) {
-      const data = await downloadStream(audioUrl, context.requestOptions);
-      try {
-        const mediaplex = require("mediaplex");
-        const timeout = this.context.player.options.probeTimeout ?? 5e3;
-        const { result, stream } = await Promise.race([
-          mediaplex.probeStream(data),
-          new Promise((_, r) => {
-            setTimeout(() => r(new Error("Timeout")), timeout);
-          })
-        ]);
-        console.log(result);
-        if (result) trackInfo.duration = result.duration * 1e3;
-        stream.destroy();
-      } catch (err) {
-        console.log(err.stack);
-      }
-    }
     return this.createResponse(null, [track]);
   }
   async stream(track) {
-    try {
-      const raw = track.raw;
-      return raw.stream;
-    } catch (err) {
-      console.log(err.stack);
-      return "";
-    }
+    const raw = track.raw;
+    return raw.stream;
   }
   async getRelatedTracks() {
     return this.createResponse(null, []);

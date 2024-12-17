@@ -1,6 +1,6 @@
 {
   "name": "soundgasm-extractor",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A Soundgasm extractor for discord-player",
   "main": "dist/index.cjs",
   "exports": {

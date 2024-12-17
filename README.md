@@ -27,3 +27,4 @@ await player.extractors.register(SoundgasmExtractor, { /* options */ });
 | Option | Type | Default | Description |
 | --- | --- | --- | --- |
 | `skipProbing` | `boolean` | `false` | Skips probing for the track duration. You can enable this to save some precious milliseconds as probing those kind of streams dont seem to work anyway. |
+| `attemptAlternateProbing` | `boolean` | `false` | Attempts to probe the track duration using a different method. This method is not as accurate as the default probing method, as it assumes the track bitrate is 128 kbps and uses the file size to calculate the duration. |

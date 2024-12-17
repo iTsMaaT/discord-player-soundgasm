@@ -2,6 +2,7 @@ import { BaseExtractor, ExtractorSearchContext, ExtractorInfo, Track } from 'dis
 
 interface SoundgasmExtractorOptions {
     skipProbing: boolean;
+    attemptAlternateProbing: boolean;
 }
 declare class SoundgasmExtractor extends BaseExtractor<SoundgasmExtractorOptions> {
     static identifier: string;

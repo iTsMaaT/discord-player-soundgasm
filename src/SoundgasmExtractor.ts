@@ -13,9 +13,12 @@ import { createReadStream, existsSync } from "fs";
 import type { IncomingMessage } from "http";
 import { stat } from "fs/promises";
 import { downloadStream } from "./downloader";
+import https from "https";
+import http from "http";
 
 export interface SoundgasmExtractorOptions {
     skipProbing: boolean;
+    attemptAlternateProbing: boolean;
 }
 
 export class SoundgasmExtractor extends BaseExtractor<SoundgasmExtractorOptions> {
@@ -53,6 +56,48 @@ export class SoundgasmExtractor extends BaseExtractor<SoundgasmExtractorOptions>
             requestedBy: null,
             raw: { stream: audioUrl },
         };
+        
+        if (!this.options.skipProbing) {
+            const data = (await downloadStream(audioUrl, context.requestOptions)) as IncomingMessage;
+
+            try {
+                const mediaplex = require("mediaplex") as typeof import("mediaplex");
+                const timeout = this.context.player.options.probeTimeout ?? 5000;
+                
+                const { result, stream } = (await Promise.race([
+                    mediaplex.probeStream(data),
+                    new Promise((_, r) => {
+                        setTimeout(() => r(new Error("Timeout")), timeout);
+                    }),
+                ])) as Awaited<ReturnType<typeof mediaplex.probeStream>>;
+                
+                if (result) trackInfo.duration = result.duration * 1000;
+                
+                stream.destroy();
+            } catch {
+                // Ignore errors
+            }
+        } else if (this.options.attemptAlternateProbing) {
+            try {        
+                const bitrateKbps = 128;
+                const getFileSize = (url: string) =>
+                    new Promise<number>((resolve, reject) => {
+                        (audioUrl.startsWith("http://") ? http : https).get(url, (res) => {
+                            const fileSize = parseInt(res.headers["content-length"] || "0", 10);
+                            if (fileSize) resolve(fileSize);
+                            else reject(new Error("Unable to fetch file size."));
+                        }).on("error", reject);
+                    });
+        
+                const fileSize = await getFileSize(audioUrl);
+                const bitrateBps = (bitrateKbps * 1000) / 8;
+                const durationInSeconds = fileSize / bitrateBps;
+        
+                trackInfo.duration = durationInSeconds * 1000;
+            } catch {
+                // Ignore errors
+            }
+        }
 
         const track = new Track(this.context.player, {
             title: trackInfo.title,
@@ -71,42 +116,14 @@ export class SoundgasmExtractor extends BaseExtractor<SoundgasmExtractorOptions>
                 return trackInfo;
             },
         });
-        
-        if (!this.options.skipProbing) {
-            const data = (await downloadStream(audioUrl, context.requestOptions)) as IncomingMessage;
-
-            try {
-                const mediaplex = require("mediaplex") as typeof import("mediaplex");
-                const timeout = this.context.player.options.probeTimeout ?? 5000;
-                
-                const { result, stream } = (await Promise.race([
-                    mediaplex.probeStream(data),
-                    new Promise((_, r) => {
-                        setTimeout(() => r(new Error("Timeout")), timeout);
-                    }),
-                ])) as Awaited<ReturnType<typeof mediaplex.probeStream>>;
-                console.log(result);
-                
-                if (result) trackInfo.duration = result.duration * 1000;
-                
-                stream.destroy();
-            } catch (err) {
-                console.log((err as Error).stack);
-            }
-        }
 
         return this.createResponse(null, [track]);
         
     }
 
     async stream(track: Track): Promise<string> {
-        try {
-            const raw = track.raw as unknown as { stream: string };
-            return raw.stream;
-        } catch (err) {
-            console.log((err as Error).stack);
-            return "";
-        }
+        const raw = track.raw as unknown as { stream: string };
+        return raw.stream;
     }
     
 

@@ -22,6 +22,7 @@ export default [...compat.extends(
         "dist/*",
         "node_modules",
         "eslint.config.mjs",
+        "tsup.config.ts",
     ],
     plugins: {
         "@typescript-eslint": typescriptEslint,

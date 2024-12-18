@@ -18,7 +18,8 @@
         "dist/**/*.ts"
       ],
       "include": [
-      "eslint.config.mjs",
-      "./src/**/*.ts"
+        "tsup.config.ts",
+        "eslint.config.mjs",
+        "./src/**/*.ts"
     ]
 }

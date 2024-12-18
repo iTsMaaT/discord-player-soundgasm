@@ -32,14 +32,14 @@
     "soundgasm"
   ],
   "devDependencies": {
-    "discord-player": "^6.7.1",
-    "discord.js": "^14.16.3",
-    "mediaplex": "^1.0.0",
     "@types/node": "^22.10.2",
     "@typescript-eslint/eslint-plugin": "^8.18.1",
     "@typescript-eslint/parser": "^8.18.1",
+    "discord-player": "^6.7.1",
+    "discord.js": "^14.16.3",
     "eslint": "^9.17.0",
     "globals": "^15.13.0",
+    "mediaplex": "^1.0.0",
     "tsup": "^8.3.5",
     "typescript": "^5.7.2"
   }

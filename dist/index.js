@@ -42,7 +42,10 @@ var _SoundgasmExtractor = class _SoundgasmExtractor extends BaseExtractor {
   }
   async handle(query, context) {
     console.log(query);
-    if (!await this.validate(query)) throw new Error("Invalid extractor invocation, skipping...");
+    if (!await this.validate(query)) {
+      this.debug("Invalid protocol, skipping...");
+      return this.createResponse(null, []);
+    }
     const pageData = await this.fetchSoundgasmPage(query);
     if (!pageData) throw new Error("Unable to fetch Soundgasm page");
     const { audioUrl, metadata } = this.extractDataFromPage(pageData);

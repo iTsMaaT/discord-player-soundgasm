@@ -51,18 +51,23 @@ function downloadStream(url, opts = {}) {
 // src/SoundgasmExtractor.ts
 var import_https2 = __toESM(require("https"), 1);
 var import_http2 = __toESM(require("http"), 1);
-var SoundgasmExtractor = class extends import_discord_player.BaseExtractor {
+var _SoundgasmExtractor = class _SoundgasmExtractor extends import_discord_player.BaseExtractor {
   async activate() {
     this.protocols = ["soundgasm"];
+    _SoundgasmExtractor.instance = this;
   }
   async deactivate() {
     this.protocols = [];
+    _SoundgasmExtractor.instance = null;
   }
   async validate(query) {
+    if (typeof query !== "string") return false;
     const regex = /^https:\/\/soundgasm\.net\/.*$/;
     return regex.test(query);
   }
   async handle(query, context) {
+    console.log(query);
+    if (!await this.validate(query)) throw new Error("Invalid extractor invocation, skipping...");
     const pageData = await this.fetchSoundgasmPage(query);
     if (!pageData) throw new Error("Unable to fetch Soundgasm page");
     const { audioUrl, metadata } = this.extractDataFromPage(pageData);
@@ -161,7 +166,9 @@ var SoundgasmExtractor = class extends import_discord_player.BaseExtractor {
     return { audioUrl, metadata };
   }
 };
-SoundgasmExtractor.identifier = "com.itsmaat.discord-player.soundgasm-extractor";
+_SoundgasmExtractor.identifier = "com.itsmaat.discord-player.soundgasm-extractor";
+_SoundgasmExtractor.instance = null;
+var SoundgasmExtractor = _SoundgasmExtractor;
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   SoundgasmExtractor

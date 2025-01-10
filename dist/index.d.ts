@@ -6,6 +6,7 @@ interface SoundgasmExtractorOptions {
 }
 declare class SoundgasmExtractor extends BaseExtractor<SoundgasmExtractorOptions> {
     static identifier: string;
+    static instance: SoundgasmExtractor | null;
     activate(): Promise<void>;
     deactivate(): Promise<void>;
     validate(query: string): Promise<boolean>;

@@ -23,21 +23,27 @@ export interface SoundgasmExtractorOptions {
 
 export class SoundgasmExtractor extends BaseExtractor<SoundgasmExtractorOptions> {
     public static identifier = "com.itsmaat.discord-player.soundgasm-extractor";
+    public static instance: SoundgasmExtractor | null = null;
 
     async activate(): Promise<void> {
         this.protocols = ["soundgasm"];
+        SoundgasmExtractor.instance = this;
     }
 
     async deactivate(): Promise<void> {
         this.protocols = [];
+        SoundgasmExtractor.instance = null;
     }
 
     async validate(query: string): Promise<boolean> {
+        if (typeof query !== "string") return false;
         const regex = /^https:\/\/soundgasm\.net\/.*$/;
         return regex.test(query);
     }
 
     async handle(query: string, context: ExtractorSearchContext): Promise<ExtractorInfo> {
+        console.log(query);
+        if (!await this.validate(query)) throw new Error("Invalid extractor invocation, skipping...");
         const pageData = await this.fetchSoundgasmPage(query);
         if (!pageData) throw new Error("Unable to fetch Soundgasm page");
 
